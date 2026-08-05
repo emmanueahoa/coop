@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Farmer Union — Dues, Ledger, Statements &amp; ID Cards</title>
+<style>
+  :root{
+    --green:#1b7a43; --green-d:#125730; --green-l:#e8f5ee;
+    --amber:#b7791f; --amber-l:#fdf3e2;
+    --red:#c0392b; --red-l:#fbeae8;
+    --blue:#2b6cb0; --blue-l:#e8f1fb;
+    --ink:#1f2933; --muted:#66788a; --line:#e2e8ef; --bg:#f4f6f9; --card:#fff;
+    --shadow:0 1px 3px rgba(16,32,48,.08),0 6px 20px rgba(16,32,48,.05);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Segoe UI',Roboto,system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+  .app{display:flex;min-height:100vh}
+  .sidebar{width:236px;background:linear-gradient(180deg,var(--green-d),var(--green));color:#fff;flex-shrink:0;position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
+  .brand{padding:20px 18px;border-bottom:1px solid rgba(255,255,255,.15)}
+  .brand h1{font-size:16px;margin:0;font-weight:700}
+  .brand span{font-size:11px;opacity:.8}
+  .nav{padding:10px 8px;flex:1;overflow:auto}
+  .nav button{display:flex;align-items:center;gap:10px;width:100%;background:transparent;border:0;color:#eafaf0;padding:11px 12px;border-radius:8px;text-align:left;cursor:pointer;font-size:13.5px;margin-bottom:2px}
+  .nav button:hover{background:rgba(255,255,255,.10)}
+  .nav button.active{background:#fff;color:var(--green-d);font-weight:600}
+  .nav .ico{width:18px;text-align:center}
+  .side-foot{padding:14px 16px;font-size:11px;opacity:.75;border-top:1px solid rgba(255,255,255,.15)}
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .topbar{background:var(--card);border-bottom:1px solid var(--line);padding:14px 26px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:5}
+  .topbar h2{margin:0;font-size:18px}
+  .topbar .sub{font-size:12px;color:var(--muted)}
+  .content{padding:24px 26px;max-width:1200px}
+  .grid{display:grid;gap:16px}
+  .kpis{grid-template-columns:repeat(4,1fr)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+  .kpi{padding:16px 18px}
+  .kpi .lbl{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+  .kpi .val{font-size:24px;font-weight:700;margin-top:6px}
+  .kpi .foot{font-size:11.5px;color:var(--muted);margin-top:4px}
+  .kpi.g{border-top:3px solid var(--green)} .kpi.b{border-top:3px solid var(--blue)}
+  .kpi.a{border-top:3px solid var(--amber)} .kpi.r{border-top:3px solid var(--red)}
+  .panel{padding:18px 20px}
+  .panel h3{margin:0 0 4px;font-size:15px}
+  .panel .desc{font-size:12.5px;color:var(--muted);margin-bottom:14px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px 12px;text-align:left;font-size:13px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);background:#fafbfc}
+  tbody tr:hover{background:#fafcfd}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .mono{font-variant-numeric:tabular-nums;font-family:'Consolas',monospace}
+  .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600}
+  .b-paid{background:var(--green-l);color:var(--green-d)}
+  .b-part{background:var(--blue-l);color:var(--blue)}
+  .b-open{background:var(--amber-l);color:var(--amber)}
+  .b-over{background:var(--red-l);color:var(--red)}
+  .b-group{background:#eef2f7;color:#40546a}
+  .b-farmer{background:#f3edfb;color:#6b46c1}
+  .btn{border:1px solid var(--line);background:#fff;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--ink)}
+  .btn:hover{background:#f6f8fa}
+  .btn.pri{background:var(--green);border-color:var(--green);color:#fff}
+  .btn.pri:hover{background:var(--green-d)}
+  .btn.sm{padding:5px 10px;font-size:12px}
+  .btn.blue{background:var(--blue);border-color:var(--blue);color:#fff}
+  .btn.ghost{background:transparent;border-color:transparent;color:var(--green);padding:5px 8px}
+  .btn.ghost:hover{background:var(--green-l)}
+  .toolbar{display:flex;gap:10px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap}
+  .toolbar .spacer{flex:1}
+  input,select{font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;width:100%}
+  input[type=color]{padding:2px;height:38px}
+  label{font-size:12px;color:var(--muted);font-weight:600;display:block;margin-bottom:5px}
+  .field{margin-bottom:14px}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:4px}
+  .overlay{position:fixed;inset:0;background:rgba(15,25,35,.5);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .overlay.show{display:flex}
+  .modal{background:#fff;border-radius:14px;width:100%;max-width:560px;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .modal-h{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+  .modal-h h3{margin:0;font-size:16px}
+  .modal-b{padding:20px 22px}
+  .modal-f{padding:16px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:#fff}
+  .x{cursor:pointer;font-size:20px;color:var(--muted);background:none;border:0}
+  .receipt .rc-top{text-align:center;border-bottom:2px dashed var(--line);padding-bottom:14px;margin-bottom:14px}
+  .receipt .rc-top .u{font-size:18px;font-weight:800;color:var(--green-d)}
+  .receipt .rc-line{display:flex;justify-content:space-between;padding:5px 0;font-size:13px}
+  .receipt .rc-total{border-top:2px solid var(--ink);margin-top:10px;padding-top:10px;font-weight:800;font-size:16px}
+  .rc-stamp{margin-top:16px;text-align:center;color:var(--green);border:2px solid var(--green);border-radius:8px;padding:6px;font-weight:800;letter-spacing:2px;transform:rotate(-3deg);width:160px;margin-left:auto;margin-right:auto}
+  .pill-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+  .pill-tabs button{border:1px solid var(--line);background:#fff;padding:7px 14px;border-radius:20px;cursor:pointer;font-size:12.5px;font-weight:600}
+  .pill-tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .empty{padding:34px;text-align:center;color:var(--muted)}
+  .ledger-eq{font-size:12px;color:var(--muted);margin:2px 0 16px}
+  .je{border:1px solid var(--line);border-radius:10px;margin-bottom:12px;overflow:hidden}
+  .je-h{background:#fafbfc;padding:10px 14px;display:flex;justify-content:space-between;font-size:12.5px}
+  .dr{color:var(--blue)} .cr{color:var(--green-d)}
+  .flash{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;box-shadow:var(--shadow);opacity:0;transform:translateY(10px);transition:.25s;z-index:99}
+  .flash.show{opacity:1;transform:none}
+  .sec-title{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:22px 0 10px;font-weight:700}
+  .mini{font-size:11.5px;color:var(--muted)}
+  .stmt-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:6px}
+  .stmt-head .u{font-size:17px;font-weight:800;color:var(--green-d)}
+  .stmt-meta{text-align:right;font-size:12px;color:var(--muted)}
+  .stmt-party{display:flex;gap:26px;flex-wrap:wrap;margin:14px 0 6px;font-size:13px}
+  .stmt-party b{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;font-weight:700}
+  .stmt-sum{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}
+  .stmt-sum .box{flex:1;min-width:120px;border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+  .stmt-sum .box .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+  .stmt-sum .box .v{font-size:18px;font-weight:700;margin-top:3px}
+  tr.charge td{background:#fff}
+  tr.pay td{background:#f6fbf8}
+
+  /* ===== ID CARD ===== */
+  .idc-layout{display:grid;grid-template-columns:300px 1fr;gap:18px;align-items:start}
+  .idc-controls .field{margin-bottom:13px}
+  .idc-controls .chk{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink);font-weight:500;margin-bottom:7px}
+  .idc-controls .chk input{width:auto}
+  .tpl-pick{display:flex;gap:6px}
+  .tpl-pick button{flex:1;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 4px;font-size:11px;font-weight:600;cursor:pointer}
+  .tpl-pick button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .card-area{display:flex;flex-wrap:wrap;gap:18px}
+  .card-pair{display:flex;flex-wrap:wrap;gap:14px}
+  .idcard{--acc:#1b7a43;--pbg:#555;width:340px;height:214px;background:#fff;color:var(--ink);border-radius:14px;position:relative;overflow:hidden;border:1px solid #dde5ec;box-shadow:0 8px 22px rgba(20,40,60,.16);font-family:'Segoe UI',Arial,sans-serif}
+  .idc-wm{position:absolute;right:-14px;bottom:-22px;font-size:120px;opacity:.05;pointer-events:none}
+  .idc-head{background:var(--acc);color:#fff;padding:9px 13px;display:flex;align-items:center;gap:9px;position:relative;z-index:1}
+  .idc-head .logo{font-size:22px;line-height:1}
+  .idc-head .u{font-weight:800;font-size:12.5px;line-height:1.12}
+  .idc-head .t{font-size:8px;opacity:.92;text-transform:uppercase;letter-spacing:1.4px;margin-top:1px}
+  .tpl-modern .idc-head{background:linear-gradient(120deg,var(--acc),rgba(0,0,0,.55))}
+  .tpl-minimal .idc-head{background:#fff;color:var(--ink);border-bottom:3px solid var(--acc)}
+  .tpl-minimal .idc-head .t{color:var(--muted)}
+  .idc-body{display:flex;gap:11px;padding:11px 13px 0;position:relative;z-index:1}
+  .idc-photo{width:62px;height:74px;border-radius:8px;background:var(--pbg);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:23px;flex-shrink:0;border:2px solid var(--acc);overflow:hidden}
+  .tpl-modern .idc-photo{border-radius:50%;width:70px;height:70px;font-size:24px}
+  .idc-fields{flex:1;min-width:0}
+  .idc-fields .nm{font-size:14.5px;font-weight:800;line-height:1.1;color:var(--ink)}
+  .idc-fields .role{display:inline-block;background:var(--acc);color:#fff;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:2px 7px;border-radius:20px;margin:4px 0 5px}
+  .idc-row{display:flex;gap:6px;margin-top:2px;align-items:baseline}
+  .idc-row .k{width:48px;color:var(--muted);text-transform:uppercase;font-size:7.5px;letter-spacing:.4px;flex-shrink:0}
+  .idc-row .v{font-weight:600;font-size:9.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .idc-qr{width:48px;height:48px;flex-shrink:0}
+  .qr{display:grid;grid-template-columns:repeat(9,1fr);width:46px;height:46px;background:#fff;padding:2px;border-radius:5px;border:1px solid #e3e9ef}
+  .qr>i{width:100%;height:100%;display:block}
+  .idc-foot{position:absolute;bottom:0;left:0;right:0;padding:6px 13px;display:flex;justify-content:space-between;align-items:flex-end;background:#f4f7f9;border-top:1px solid #e6ecf1;z-index:1}
+  .idc-foot .lbl{font-size:7px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+  .idc-foot .val{font-size:11px;font-weight:800;font-family:'Consolas',monospace;color:var(--ink)}
+  .barcode{height:20px;width:96px;background:repeating-linear-gradient(90deg,#1f2933 0,#1f2933 2px,#fff 2px,#fff 4px,#1f2933 4px,#1f2933 5px,#fff 5px,#fff 8px);border-radius:2px}
+  .idc-back{width:340px;height:214px;background:#fff;border:1px solid #dde5ec;border-radius:14px;overflow:hidden;position:relative;box-shadow:0 8px 22px rgba(20,40,60,.16);font-family:'Segoe UI',Arial}
+  .idc-mag{height:36px;background:#222;margin-top:14px}
+  .idc-back-b{padding:11px 14px}
+  .idc-back-b .terms{font-size:8.3px;color:#40546a;line-height:1.4}
+  .idc-sign{margin-top:10px;display:flex;justify-content:space-between;align-items:flex-end}
+  .sign-box{width:120px;border-top:1px solid #9fb0c0;text-align:center;font-size:7.5px;color:var(--muted);padding-top:3px}
+  .idc-return{position:absolute;bottom:8px;left:14px;right:14px;font-size:7.5px;color:var(--muted);text-align:center;border-top:1px dashed #dde5ec;padding-top:5px}
+  .card-name-tag{font-size:12px;font-weight:700;margin-bottom:6px}
+  .card-cell{display:flex;flex-direction:column}
+
+  @media(max-width:860px){.kpis{grid-template-columns:1fr 1fr}.row2{grid-template-columns:1fr}.sidebar{display:none}.idc-layout{grid-template-columns:1fr}}
+  @media print{
+    .sidebar,.topbar,.no-print,.toolbar,.idc-controls,.pill-tabs{display:none!important}
+    .overlay{position:static;background:none;display:block}.modal{box-shadow:none;max-width:100%;max-height:none}
+    .content{max-width:100%;padding:0}.idc-layout{display:block}
+    .card-area{gap:10px}
+    .idcard,.idc-back{box-shadow:none;break-inside:avoid;page-break-inside:avoid}
+    .card-cell{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>🌾 Green Valley Farmer Union</h1>
+      <span>Dues, Ledger &amp; Membership</span>
+    </div>
+    <nav class="nav" id="nav">
+      <button data-view="dashboard" class="active"><span class="ico">📊</span> Dashboard</button>
+      <button data-view="groups"><span class="ico">🏘️</span> Farmer Groups</button>
+      <button data-view="farmers"><span class="ico">👤</span> Farmers</button>
+      <button data-view="idcards"><span class="ico">🪪</span> Member ID Cards</button>
+      <button data-view="duestypes"><span class="ico">⚙️</span> Dues Setup</button>
+      <button data-view="assessments"><span class="ico">🧾</span> Assessments</button>
+      <button data-view="payments"><span class="ico">💵</span> Payments &amp; Receipts</button>
+      <button data-view="statements"><span class="ico">📄</span> Statements &amp; Reports</button>
+      <button data-view="ledger"><span class="ico">📒</span> Financial Ledger</button>
+    </nav>
+    <div class="side-foot">Currency: EUR (€) · FY 2026<br>Demo data · resets on refresh</div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <h2 id="pageTitle">Dashboard</h2>
+        <div class="sub" id="pageSub">Financial overview of dues across the union</div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn" onclick="openAssessModal()">＋ Set Amount Owed</button>
+        <button class="btn pri" onclick="openPayModal()">＋ Record Payment</button>
+      </div>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<!-- ASSESSMENT MODAL -->
+<div class="overlay" id="assessOverlay">
+  <div class="modal">
+    <div class="modal-h"><h3>Set Amount Owed (Dues Assessment)</h3><button class="x" onclick="closeModal('assessOverlay')">×</button></div>
+    <div class="modal-b">
+      <div class="field"><label>Who owes the dues?</label>
+        <select id="a_payerType" onchange="onPayerTypeChange()">
+          <option value="FarmerGroup">Farmer Group → pays Union</option>
+          <option value="Farmer">Farmer → pays Union or Group</option>
+        </select></div>
+      <div class="field" id="a_groupWrap"><label>Farmer Group</label><select id="a_group"></select></div>
+      <div class="field" id="a_farmerWrap" style="display:none"><label>Farmer</label><select id="a_farmer"></select></div>
+      <div class="field"><label>Dues Type</label><select id="a_duesType" onchange="onDuesTypeChange()"></select>
+        <div class="hint" id="a_beneficiaryHint"></div></div>
+      <div class="row2">
+        <div class="field"><label>Amount (€)</label><input id="a_amount" type="number" min="0" step="0.01" placeholder="0.00"/></div>
+        <div class="field"><label>Due Date</label><input id="a_due" type="date"/></div>
+      </div>
+      <div class="field"><label>Period / Description</label><input id="a_desc" placeholder="e.g. 2026 Annual Affiliation Dues"/></div>
+    </div>
+    <div class="modal-f">
+      <button class="btn" onclick="closeModal('assessOverlay')">Cancel</button>
+      <button class="btn pri" onclick="saveAssessment()">Create Assessment</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div class="overlay" id="payOverlay">
+  <div class="modal">
+    <div class="modal-h"><h3>Record Dues Payment</h3><button class="x" onclick="closeModal('payOverlay')">×</button></div>
+    <div class="modal-b">
+      <div class="field"><label>Payer</label><select id="p_payer" onchange="loadPayableAssessments()"></select>
+        <div class="hint">Choose a group or farmer with outstanding dues.</div></div>
+      <div id="p_assessList"></div>
+      <div class="row2">
+        <div class="field"><label>Payment Method</label>
+          <select id="p_method"><option>Cash</option><option>BankTransfer</option><option>MobileMoney</option><option>Cheque</option></select></div>
+        <div class="field"><label>Payment Date</label><input id="p_date" type="date"/></div>
+      </div>
+      <div class="field"><label>Collected By</label>
+        <select id="p_collector"><option value="Union">Union (direct)</option><option value="Group">Farmer Group (on behalf of union)</option></select></div>
+      <div class="card" style="padding:12px 14px;background:var(--green-l);border-color:#bfe3cd">
+        <div style="display:flex;justify-content:space-between;font-weight:700"><span>Total to pay</span><span class="mono" id="p_total">€0.00</span></div>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn" onclick="closeModal('payOverlay')">Cancel</button>
+      <button class="btn pri" onclick="savePayment()">Confirm &amp; Generate Receipt</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECEIPT MODAL -->
+<div class="overlay" id="receiptOverlay">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-h"><h3>Official Receipt</h3><button class="x" onclick="closeModal('receiptOverlay')">×</button></div>
+    <div class="modal-b"><div id="receiptBody" class="receipt"></div></div>
+    <div class="modal-f no-print">
+      <button class="btn" onclick="closeModal('receiptOverlay')">Close</button>
+      <button class="btn blue" onclick="window.print()">🖨 Print</button>
+    </div>
+  </div>
+</div>
+
+<!-- STATEMENT MODAL -->
+<div class="overlay" id="stmtOverlay">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-h"><h3>Statement of Account</h3><button class="x" onclick="closeModal('stmtOverlay')">×</button></div>
+    <div class="modal-b"><div id="stmtBody"></div></div>
+    <div class="modal-f no-print">
+      <button class="btn" onclick="closeModal('stmtOverlay')">Close</button>
+      <button class="btn" onclick="exportStmtCSV()">⬇ Export CSV</button>
+      <button class="btn blue" onclick="window.print()">🖨 Print / PDF</button>
+    </div>
+  </div>
+</div>
+
+<div class="flash" id="flash"></div>
+
+<script>
+/* ===================== MOCK DATABASE ===================== */
+const CUR='€';
+const fmt=n=>CUR+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const today='2026-07-31';
+
+const DB={
+  union:{name:'Green Valley Farmer Union',short:'GVFU',currency:'EUR',logo:'🌾',
+    address:'Coolsingel 40, 3011 Rotterdam, Netherlands',phone:'+31 10 555 0100',
+    website:'www.greenvalleyunion.nl',secretary:'N. Oosterom',regNo:'KVK 24-556677'},
+  groups:[
+    {id:'FG-001',name:'Sunrise Growers',location:'Rotterdam North',members:42},
+    {id:'FG-002',name:'Riverbank Cooperative',location:'Ede West',members:38},
+    {id:'FG-003',name:'Highland Cultivators',location:'Wageningen',members:55},
+    {id:'FG-004',name:'Green Meadows Group',location:'Arnhem South',members:29},
+    {id:'FG-005',name:'Delta Farmers Circle',location:'Nijmegen',members:47},
+  ],
+  farmers:[
+    {id:'FARM-00125',name:'Kwame Mensah',group:'FG-001',phone:'+31 6 1234 5678',dob:'1985-04-12',gender:'M',national:'NL85041012',blood:'O+',joined:'2021-03-01'},
+    {id:'FARM-00126',name:'Ama Boateng',group:'FG-001',phone:'+31 6 2233 4455',dob:'1990-09-23',gender:'F',national:'NL90092345',blood:'A+',joined:'2022-06-15'},
+    {id:'FARM-00204',name:'Johan de Vries',group:'FG-002',phone:'+31 6 8899 1122',dob:'1978-01-30',gender:'M',national:'NL78013067',blood:'B+',joined:'2020-02-10'},
+    {id:'FARM-00318',name:'Fatima Nkrumah',group:'FG-003',phone:'+31 6 5566 7788',dob:'1993-11-05',gender:'F',national:'NL93110589',blood:'AB+',joined:'2023-01-20'},
+    {id:'FARM-00355',name:'Piet Jansen',group:'FG-004',phone:'+31 6 3344 5566',dob:'1982-07-19',gender:'M',national:'NL82071923',blood:'O-',joined:'2021-09-01'},
+    {id:'FARM-00402',name:'Grace Owusu',group:'FG-005',phone:'+31 6 7788 9900',dob:'1995-03-14',gender:'F',national:'NL95031456',blood:'A-',joined:'2024-04-05'},
+  ],
+  duesTypes:[
+    {id:'DT-GA',code:'GRP-AFFIL',name:'Group Annual Affiliation Dues',payer:'FarmerGroup',beneficiary:'Union',freq:'Annually'},
+    {id:'DT-GL',code:'GRP-LEVY',name:'Group Development Levy',payer:'FarmerGroup',beneficiary:'Union',freq:'OneTime'},
+    {id:'DT-FU',code:'FRM-UNION',name:'Farmer Union Membership Dues',payer:'Farmer',beneficiary:'Union',freq:'Annually'},
+    {id:'DT-FG',code:'FRM-GRP',name:'Farmer Monthly Group Dues',payer:'Farmer',beneficiary:'FarmerGroup',freq:'Monthly'},
+  ],
+  assessments:[
+    {id:'ASS-1001',date:'2026-01-05',payerType:'FarmerGroup',payerId:'FG-001',duesType:'DT-GA',beneficiary:'Union',desc:'2026 Annual Affiliation Dues',amount:500,paid:500,due:'2026-03-31'},
+    {id:'ASS-1002',date:'2026-01-05',payerType:'FarmerGroup',payerId:'FG-002',duesType:'DT-GA',beneficiary:'Union',desc:'2026 Annual Affiliation Dues',amount:500,paid:200,due:'2026-03-31'},
+    {id:'ASS-1003',date:'2026-01-05',payerType:'FarmerGroup',payerId:'FG-003',duesType:'DT-GA',beneficiary:'Union',desc:'2026 Annual Affiliation Dues',amount:500,paid:0,due:'2026-03-31'},
+    {id:'ASS-1004',date:'2026-06-01',payerType:'FarmerGroup',payerId:'FG-003',duesType:'DT-GL',beneficiary:'Union',desc:'Irrigation Project Levy',amount:250,paid:0,due:'2026-08-15'},
+    {id:'ASS-1005',date:'2026-01-05',payerType:'FarmerGroup',payerId:'FG-004',duesType:'DT-GA',beneficiary:'Union',desc:'2026 Annual Affiliation Dues',amount:500,paid:500,due:'2026-03-31'},
+    {id:'ASS-1006',date:'2026-01-05',payerType:'FarmerGroup',payerId:'FG-005',duesType:'DT-GA',beneficiary:'Union',desc:'2026 Annual Affiliation Dues',amount:500,paid:150,due:'2026-03-31'},
+    {id:'ASS-2001',date:'2026-01-10',payerType:'Farmer',payerId:'FARM-00125',duesType:'DT-FU',beneficiary:'Union',desc:'2026 Union Membership Dues',amount:50,paid:50,due:'2026-02-28'},
+    {id:'ASS-2002',date:'2026-07-01',payerType:'Farmer',payerId:'FARM-00125',duesType:'DT-FG',beneficiary:'FarmerGroup',desc:'July 2026 Group Dues',amount:10,paid:0,due:'2026-07-31'},
+    {id:'ASS-2003',date:'2026-01-10',payerType:'Farmer',payerId:'FARM-00204',duesType:'DT-FU',beneficiary:'Union',desc:'2026 Union Membership Dues',amount:50,paid:0,due:'2026-02-28'},
+    {id:'ASS-2004',date:'2026-01-10',payerType:'Farmer',payerId:'FARM-00318',duesType:'DT-FU',beneficiary:'Union',desc:'2026 Union Membership Dues',amount:50,paid:25,due:'2026-02-28'},
+    {id:'ASS-2005',date:'2026-06-01',payerType:'Farmer',payerId:'FARM-00126',duesType:'DT-FG',beneficiary:'FarmerGroup',desc:'June 2026 Group Dues',amount:10,paid:10,due:'2026-06-30'},
+  ],
+  payments:[
+    {id:'RCP-5001',date:'2026-02-10',payerType:'FarmerGroup',payerId:'FG-001',method:'BankTransfer',collector:'Union',amount:500,allocations:[{assessId:'ASS-1001',amt:500}]},
+    {id:'RCP-5002',date:'2026-03-05',payerType:'FarmerGroup',payerId:'FG-002',method:'BankTransfer',collector:'Union',amount:200,allocations:[{assessId:'ASS-1002',amt:200}]},
+    {id:'RCP-5003',date:'2026-03-20',payerType:'FarmerGroup',payerId:'FG-004',method:'Cash',collector:'Union',amount:500,allocations:[{assessId:'ASS-1005',amt:500}]},
+    {id:'RCP-5004',date:'2026-04-02',payerType:'FarmerGroup',payerId:'FG-005',method:'MobileMoney',collector:'Union',amount:150,allocations:[{assessId:'ASS-1006',amt:150}]},
+    {id:'RCP-5005',date:'2026-02-15',payerType:'Farmer',payerId:'FARM-00125',method:'Cash',collector:'Group',amount:50,allocations:[{assessId:'ASS-2001',amt:50}]},
+    {id:'RCP-5006',date:'2026-03-01',payerType:'Farmer',payerId:'FARM-00318',method:'MobileMoney',collector:'Union',amount:25,allocations:[{assessId:'ASS-2004',amt:25}]},
+    {id:'RCP-5007',date:'2026-06-20',payerType:'Farmer',payerId:'FARM-00126',method:'Cash',collector:'Group',amount:10,allocations:[{assessId:'ASS-2005',amt:10}]},
+  ],
+  journal:[
+    {id:'JE-9001',date:'2026-02-10',src:'RCP-5001',desc:'Affiliation dues received — Sunrise Growers',lines:[{acct:'1000 Union Bank',dr:500,cr:0},{acct:'4000 Affiliation Dues Income',dr:0,cr:500}]},
+    {id:'JE-9002',date:'2026-03-05',src:'RCP-5002',desc:'Part payment affiliation dues — Riverbank Coop',lines:[{acct:'1000 Union Bank',dr:200,cr:0},{acct:'4000 Affiliation Dues Income',dr:0,cr:200}]},
+    {id:'JE-9003',date:'2026-03-20',src:'RCP-5003',desc:'Affiliation dues received — Green Meadows',lines:[{acct:'1010 Union Cash',dr:500,cr:0},{acct:'4000 Affiliation Dues Income',dr:0,cr:500}]},
+    {id:'JE-9004',date:'2026-04-02',src:'RCP-5004',desc:'Part payment affiliation dues — Delta Farmers',lines:[{acct:'1000 Union Bank',dr:150,cr:0},{acct:'4000 Affiliation Dues Income',dr:0,cr:150}]},
+    {id:'JE-9005',date:'2026-02-15',src:'RCP-5005',desc:'Union membership dues collected by group — K. Mensah',lines:[{acct:'1200 Group Clearing (held for union)',dr:50,cr:0},{acct:'4100 Membership Dues Income',dr:0,cr:50}]},
+    {id:'JE-9006',date:'2026-03-01',src:'RCP-5006',desc:'Union membership dues — F. Nkrumah',lines:[{acct:'1000 Union Bank',dr:25,cr:0},{acct:'4100 Membership Dues Income',dr:0,cr:25}]},
+    {id:'JE-9007',date:'2026-06-20',src:'RCP-5007',desc:'Group dues collected — A. Boateng',lines:[{acct:'1200 Group Clearing (held for union)',dr:10,cr:0},{acct:'4200 Group Dues Income',dr:0,cr:10}]},
+  ],
+  seq:{ass:1007,farmAss:2006,rcp:5008,je:9008}
+};
+
+const groupName=id=>(DB.groups.find(g=>g.id===id)||{}).name||id;
+const farmerName=id=>(DB.farmers.find(f=>f.id===id)||{}).name||id;
+const dtName=id=>(DB.duesTypes.find(d=>d.id===id)||{}).name||id;
+const payerLabel=a=>a.payerType==='FarmerGroup'?groupName(a.payerId):farmerName(a.payerId);
+const balance=a=>+(a.amount-a.paid).toFixed(2);
+function statusOf(a){if(a.paid>=a.amount)return{t:'Paid',c:'b-paid'};if(a.paid>0)return{t:'Partial',c:'b-part'};if(a.due<today)return{t:'Overdue',c:'b-over'};return{t:'Open',c:'b-open'};}
+
+/* ===================== ROUTING ===================== */
+const TITLES={
+  dashboard:['Dashboard','Financial overview of dues across the union'],
+  groups:['Farmer Groups','Balances and dues owed by each group'],
+  farmers:['Farmers','Individual farmer dues to union and group'],
+  idcards:['Member ID Cards','Design & print standard membership cards'],
+  duestypes:['Dues Setup','Configure the dues rules that can be assessed'],
+  assessments:['Assessments','All amounts owed (union & group beneficiaries)'],
+  payments:['Payments & Receipts','Recorded payments with printable receipts'],
+  statements:['Statements & Reports','Account statements & transaction register at every level'],
+  ledger:['Financial Ledger','Double-entry journal — every transaction balanced'],
+};
+let current='dashboard';
+document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');go(b.dataset.view);});
+function go(v){current=v;
+  document.getElementById('pageTitle').textContent=TITLES[v][0];
+  document.getElementById('pageSub').textContent=TITLES[v][1];
+  document.getElementById('content').innerHTML=({dashboard:renderDashboard,groups:renderGroups,farmers:renderFarmers,
+    idcards:renderIdCards,duestypes:renderDuesTypes,assessments:renderAssessments,payments:renderPayments,
+    statements:renderStatements,ledger:renderLedger}[v])();
+}
+
+/* ===================== DASHBOARD ===================== */
+function totals(){let assessed=0,collected=0;DB.assessments.forEach(a=>{assessed+=a.amount;collected+=a.paid;});return{assessed,collected,outstanding:assessed-collected};}
+function renderDashboard(){
+  const t=totals();const rate=t.assessed?Math.round(t.collected/t.assessed*100):0;
+  const overdue=DB.assessments.filter(a=>balance(a)>0&&a.due<today).reduce((s,a)=>s+balance(a),0);
+  const grpOwed=DB.assessments.filter(a=>a.payerType==='FarmerGroup').reduce((s,a)=>s+balance(a),0);
+  const held=DB.journal.flatMap(j=>j.lines).filter(l=>l.acct.includes('Clearing')).reduce((s,l)=>s+l.dr-l.cr,0);
+  const rows=DB.groups.map(g=>{const list=DB.assessments.filter(a=>a.payerType==='FarmerGroup'&&a.payerId===g.id);
+    const owed=list.reduce((s,a)=>s+a.amount,0),paid=list.reduce((s,a)=>s+a.paid,0);
+    return{g,owed,paid,bal:owed-paid,pct:owed?Math.round(paid/owed*100):0};}).sort((a,b)=>a.pct-b.pct);
+  return `<div class="grid kpis">
+    ${kpi('g','Total Assessed','🧾',fmt(t.assessed),'All dues owed to union & groups')}
+    ${kpi('b','Total Collected','💵',fmt(t.collected),rate+'% collection rate')}
+    ${kpi('a','Outstanding','⏳',fmt(t.outstanding),DB.assessments.filter(a=>balance(a)>0).length+' open assessments')}
+    ${kpi('r','Overdue','⚠️',fmt(overdue),'Past due date '+today)}
+  </div>
+  <div class="grid row2" style="margin-top:16px">
+    <div class="card panel"><h3>Collection progress by group</h3>
+      <div class="desc">Lowest collection rate first. Click a group to open its statement.</div>
+      <table><thead><tr><th>Group</th><th class="num">Owed</th><th class="num">Paid</th><th class="num">Balance</th><th style="width:150px">Rate</th></tr></thead><tbody>
+      ${rows.map(r=>`<tr style="cursor:pointer" onclick="openStatement('FarmerGroup','${r.g.id}')">
+        <td><b>${r.g.name}</b><div class="mini">${r.g.id}</div></td>
+        <td class="num mono">${fmt(r.owed)}</td><td class="num mono">${fmt(r.paid)}</td>
+        <td class="num mono">${fmt(r.bal)}</td><td>${bar(r.pct)}</td></tr>`).join('')}
+      </tbody></table></div>
+    <div class="grid" style="align-content:start;gap:16px">
+      <div class="card kpi b"><div class="lbl">🏘️ Group dues owed to union</div><div class="val">${fmt(grpOwed)}</div><div class="foot">Outstanding from ${DB.groups.length} groups</div></div>
+      <div class="card kpi a"><div class="lbl">🤝 Collected by groups, held for union</div><div class="val">${fmt(held)}</div><div class="foot">Awaiting remittance (clearing account)</div></div>
+      <div class="card panel"><h3 style="margin-bottom:10px">Quick actions</h3>
+        <button class="btn pri" style="width:100%;margin-bottom:8px" onclick="openAssessModal()">＋ Set amount owed</button>
+        <button class="btn" style="width:100%;margin-bottom:8px" onclick="openPayModal()">💵 Record a dues payment</button>
+        <button class="btn" style="width:100%" onclick="document.querySelector('[data-view=idcards]').click()">🪪 Generate member ID cards</button>
+      </div></div>
+  </div>`;
+}
+const kpi=(c,l,ic,v,f)=>`<div class="card kpi ${c}"><div class="lbl">${ic} ${l}</div><div class="val">${v}</div><div class="foot">${f}</div></div>`;
+function bar(p){const col=p>=80?'var(--green)':p>=40?'var(--amber)':'var(--red)';
+  return `<div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:8px;background:#eef1f4;border-radius:6px;overflow:hidden"><div style="width:${p}%;height:100%;background:${col}"></div></div><span class="mini" style="width:34px;text-align:right">${p}%</span></div>`;}
+
+/* ===================== GROUPS / FARMERS ===================== */
+function renderGroups(){
+  return `<div class="card panel"><table>
+    <thead><tr><th>Group</th><th>Location</th><th class="num">Members</th><th class="num">Total Owed</th><th class="num">Paid</th><th class="num">Balance</th><th>Status</th><th></th></tr></thead><tbody>
+    ${DB.groups.map(g=>{const list=DB.assessments.filter(a=>a.payerType==='FarmerGroup'&&a.payerId===g.id);
+      const owed=list.reduce((s,a)=>s+a.amount,0),paid=list.reduce((s,a)=>s+a.paid,0),bal=owed-paid;
+      const st=bal<=0?'<span class="badge b-paid">Settled</span>':'<span class="badge b-open">Owing</span>';
+      return `<tr><td><b>${g.name}</b><div class="mini">${g.id}</div></td><td>${g.location}</td><td class="num">${g.members}</td>
+        <td class="num mono">${fmt(owed)}</td><td class="num mono">${fmt(paid)}</td><td class="num mono"><b>${fmt(bal)}</b></td><td>${st}</td>
+        <td style="white-space:nowrap"><button class="btn ghost sm" onclick="openStatement('FarmerGroup','${g.id}')">📄 Statement</button>
+            <button class="btn ghost sm" onclick="openAssessModal('FarmerGroup','${g.id}')">＋ Dues</button>
+            ${bal>0?`<button class="btn ghost sm" onclick="openPayModal('FarmerGroup','${g.id}')">Pay</button>`:''}</td></tr>`;}).join('')}
+    </tbody></table></div>`;
+}
+function renderFarmers(){
+  return `<div class="card panel"><table>
+    <thead><tr><th>Farmer</th><th>Group</th><th class="num">Owed</th><th class="num">Paid</th><th class="num">Balance</th><th></th></tr></thead><tbody>
+    ${DB.farmers.map(f=>{const list=DB.assessments.filter(a=>a.payerType==='Farmer'&&a.payerId===f.id);
+      const owed=list.reduce((s,a)=>s+a.amount,0),paid=list.reduce((s,a)=>s+a.paid,0),bal=owed-paid;
+      return `<tr><td><b>${f.name}</b><div class="mini">${f.id}</div></td>
+        <td><span class="badge b-group">${groupName(f.group)}</span></td>
+        <td class="num mono">${fmt(owed)}</td><td class="num mono">${fmt(paid)}</td><td class="num mono"><b>${fmt(bal)}</b></td>
+        <td style="white-space:nowrap"><button class="btn ghost sm" onclick="openStatement('Farmer','${f.id}')">📄 Statement</button>
+            <button class="btn ghost sm" onclick="openCardFor('${f.id}')">🪪 ID card</button>
+            <button class="btn ghost sm" onclick="openAssessModal('Farmer','${f.id}')">＋ Dues</button>
+            ${bal>0?`<button class="btn ghost sm" onclick="openPayModal('Farmer','${f.id}')">Pay</button>`:''}</td></tr>`;}).join('')}
+    </tbody></table>
+    <p class="hint" style="margin-top:12px">A farmer may owe <b>union dues</b> and <b>group dues</b> at the same time — each is a separate assessment with its own beneficiary.</p></div>`;
+}
+
+/* ===================== MEMBER ID CARDS ===================== */
+const CARD={template:'classic',accent:'#1b7a43',photo:true,back:true,issue:today,validYears:3,
+  role:'Registered Member',member:'ALL',
+  fields:{phone:true,dob:true,national:false,blood:true,joined:true}};
+
+function renderIdCards(){
+  const memberOpts=`<option value="ALL">All members (batch)</option>`+
+    DB.farmers.map(f=>`<option value="${f.id}" ${CARD.member===f.id?'selected':''}>${f.name} (${f.id})</option>`).join('');
+  const tpl=(id,label)=>`<button class="${CARD.template===id?'on':''}" onclick="CARD.template='${id}';refreshCards();syncTplButtons()">${label}</button>`;
+  const chk=(k,label)=>`<label class="chk"><input type="checkbox" ${CARD.fields[k]?'checked':''} onchange="CARD.fields.${k}=this.checked;refreshCards()"> ${label}</label>`;
+  return `<div class="idc-layout">
+    <div class="card panel idc-controls no-print">
+      <h3>Card designer</h3><div class="desc">Everything updates live. Standard CR80 (credit-card) size.</div>
+      <div class="field"><label>Member</label>
+        <select onchange="CARD.member=this.value;refreshCards()">${memberOpts}</select></div>
+      <div class="field"><label>Template</label>
+        <div class="tpl-pick" id="tplPick">${tpl('classic','Classic')}${tpl('modern','Modern')}${tpl('minimal','Minimal')}</div></div>
+      <div class="field"><label>Accent colour</label>
+        <input type="color" value="${CARD.accent}" oninput="CARD.accent=this.value;refreshCards()"></div>
+      <div class="row2">
+        <div class="field"><label>Issue date</label><input type="date" value="${CARD.issue}" onchange="CARD.issue=this.value;refreshCards()"></div>
+        <div class="field"><label>Valid (years)</label>
+          <select onchange="CARD.validYears=+this.value;refreshCards()">
+            ${[1,2,3,4,5].map(y=>`<option ${CARD.validYears===y?'selected':''}>${y}</option>`).join('')}</select></div>
+      </div>
+      <div class="field"><label>Role / title on card</label>
+        <input value="${CARD.role}" oninput="CARD.role=this.value;refreshCards()"></div>
+      <label style="margin-bottom:6px">Show fields</label>
+      ${chk('phone','Phone number')}${chk('dob','Date of birth')}${chk('national','National ID')}${chk('blood','Blood group')}${chk('joined','Member since')}
+      <label class="chk" style="margin-top:8px"><input type="checkbox" ${CARD.photo?'checked':''} onchange="CARD.photo=this.checked;refreshCards()"> Show photo / avatar</label>
+      <label class="chk"><input type="checkbox" ${CARD.back?'checked':''} onchange="CARD.back=this.checked;refreshCards()"> Include card back</label>
+      <div style="margin-top:14px;display:flex;gap:8px">
+        <button class="btn blue" style="flex:1" onclick="window.print()">🖨 Print / PDF</button>
+      </div>
+      <p class="hint">Tip: in the print dialog choose <b>Save as PDF</b>, margins <b>None</b>, background graphics <b>on</b>.</p>
+    </div>
+    <div>
+      <div class="toolbar no-print" style="margin-bottom:12px">
+        <div class="mini">${CARD.member==='ALL'?DB.farmers.length+' cards ready for batch printing':'Previewing 1 card'} · Valid thru ${validThru()}</div>
+      </div>
+      <div class="card-area" id="cardArea">${cardsAreaHTML()}</div>
+    </div>
+  </div>`;
+}
+function syncTplButtons(){document.querySelectorAll('#tplPick button').forEach((b,i)=>b.classList.toggle('on',['classic','modern','minimal'][i]===CARD.template));}
+function refreshCards(){const el=document.getElementById('cardArea');if(el)el.innerHTML=cardsAreaHTML();}
+function openCardFor(id){CARD.member=id;document.querySelector('[data-view=idcards]').click();}
+
+function validThru(){const d=new Date(CARD.issue);d.setFullYear(d.getFullYear()+CARD.validYears);
+  return String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();}
+
+function cardsAreaHTML(){
+  const list=CARD.member==='ALL'?DB.farmers:DB.farmers.filter(f=>f.id===CARD.member);
+  return list.map(f=>`<div class="card-cell">
+      ${CARD.member!=='ALL'?`<div class="card-name-tag">${f.name} — front${CARD.back?' & back':''}</div>`:''}
+      <div class="card-pair">${cardFrontHTML(f)}${CARD.back?cardBackHTML(f):''}</div>
+    </div>`).join('');
+}
+
+function avatar(f){
+  const initials=f.name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+  let h=0;for(const c of f.id)h=(h*31+c.charCodeAt(0))%360;
+  return{initials,bg:`hsl(${h},42%,42%)`};
+}
+function qrHTML(seed){let h=0;for(const c of seed)h=(h*131+c.charCodeAt(0))>>>0;
+  let cells='';for(let i=0;i<81;i++){h=(h*1103515245+12345)>>>0;const on=((h>>9)&1)||i<3||i%9<1?((h>>7)&1):((h>>5)&1);
+    cells+=`<i style="background:${on?'#16202b':'transparent'}"></i>`;}
+  return `<div class="qr">${cells}</div>`;}
+
+function cardFrontHTML(f){
+  const av=avatar(f);
+  const rows=[];
+  rows.push(['Group',groupName(f.group)]);
+  if(CARD.fields.phone) rows.push(['Phone',f.phone]);
+  if(CARD.fields.dob) rows.push(['Born',f.dob]);
+  if(CARD.fields.national) rows.push(['Nat. ID',f.national]);
+  if(CARD.fields.blood) rows.push(['Blood',f.blood]);
+  if(CARD.fields.joined) rows.push(['Since',f.joined]);
+  const photo=CARD.photo?`<div class="idc-photo" style="--pbg:${av.bg}">${av.initials}</div>`:'';
+  return `<div class="idcard tpl-${CARD.template}" style="--acc:${CARD.accent}">
+    <div class="idc-wm">${DB.union.logo}</div>
+    <div class="idc-head"><span class="logo">${DB.union.logo}</span>
+      <div><div class="u">${DB.union.name}</div><div class="t">Member Identity Card · ${DB.union.short}</div></div></div>
+    <div class="idc-body">
+      ${photo}
+      <div class="idc-fields">
+        <div class="nm">${f.name}</div><span class="role">${CARD.role}</span>
+        ${rows.map(r=>`<div class="idc-row"><span class="k">${r[0]}</span><span class="v">${r[1]}</span></div>`).join('')}
+      </div>
+      <div class="idc-qr">${qrHTML(f.id+f.name)}</div>
+    </div>
+    <div class="idc-foot">
+      <div><div class="lbl">Member ID</div><div class="val">${f.id}</div></div>
+      <div class="barcode"></div>
+      <div style="text-align:right"><div class="lbl">Valid thru</div><div class="val">${validThru()}</div></div>
+    </div>
+  </div>`;
+}
+function cardBackHTML(f){
+  return `<div class="idc-back">
+    <div class="idc-mag"></div>
+    <div class="idc-back-b">
+      <div class="terms">This card remains the property of <b>${DB.union.name}</b>. It certifies that the holder is a
+      registered member of <b>${groupName(f.group)}</b> affiliated to the union. Non-transferable. If found, please return
+      to the address below. Issued ${CARD.issue}.</div>
+      <div class="idc-sign">
+        <div class="sign-box">Member signature</div>
+        <div class="sign-box">${DB.union.secretary}<br>Union Secretary</div>
+      </div>
+    </div>
+    <div class="idc-return">${DB.union.address} · ${DB.union.phone} · ${DB.union.website} · ${DB.union.regNo}</div>
+  </div>`;
+}
+
+/* ===================== DUES TYPES ===================== */
+function renderDuesTypes(){
+  return `<div class="card panel"><h3>Configured dues rules</h3>
+    <div class="desc">Templates the union uses when setting an amount owed. Rates are entered per assessment in this demo.</div>
+    <table><thead><tr><th>Code</th><th>Name</th><th>Paid by</th><th>Beneficiary</th><th>Frequency</th></tr></thead><tbody>
+    ${DB.duesTypes.map(d=>`<tr><td class="mono">${d.code}</td><td><b>${d.name}</b></td>
+      <td><span class="badge ${d.payer==='Farmer'?'b-farmer':'b-group'}">${d.payer}</span></td>
+      <td><span class="badge ${d.beneficiary==='Union'?'b-paid':'b-part'}">${d.beneficiary}</span></td><td>${d.freq}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+/* ===================== ASSESSMENTS ===================== */
+let assessFilter='all';
+function renderAssessments(){
+  const filt=DB.assessments.filter(a=>{if(assessFilter==='group')return a.payerType==='FarmerGroup';
+    if(assessFilter==='farmer')return a.payerType==='Farmer';if(assessFilter==='open')return balance(a)>0;return true;});
+  return `<div class="pill-tabs">
+    ${['all','group','farmer','open'].map(f=>`<button class="${assessFilter===f?'on':''}" onclick="assessFilter='${f}';go('assessments')">${({all:'All',group:'Group dues',farmer:'Farmer dues',open:'Outstanding'})[f]}</button>`).join('')}</div>
+  <div class="card panel"><table>
+    <thead><tr><th>Assessment</th><th>Payer</th><th>Dues Type</th><th>Beneficiary</th><th class="num">Amount</th><th class="num">Paid</th><th class="num">Balance</th><th>Due</th><th>Status</th></tr></thead><tbody>
+    ${filt.map(a=>{const s=statusOf(a);return `<tr><td class="mono">${a.id}<div class="mini">${a.desc}</div></td>
+      <td><span class="badge ${a.payerType==='Farmer'?'b-farmer':'b-group'}">${a.payerType==='Farmer'?'👤':'🏘️'} ${payerLabel(a)}</span></td>
+      <td>${dtName(a.duesType)}</td><td><span class="badge ${a.beneficiary==='Union'?'b-paid':'b-part'}">${a.beneficiary}</span></td>
+      <td class="num mono">${fmt(a.amount)}</td><td class="num mono">${fmt(a.paid)}</td><td class="num mono"><b>${fmt(balance(a))}</b></td>
+      <td>${a.due}</td><td><span class="badge ${s.c}">${s.t}</span></td></tr>`;}).join('')||'<tr><td colspan="9" class="empty">No assessments match.</td></tr>'}
+    </tbody></table></div>`;
+}
+
+/* ===================== PAYMENTS ===================== */
+function renderPayments(){
+  return `<div class="card panel"><table>
+    <thead><tr><th>Receipt No.</th><th>Date</th><th>Payer</th><th>Method</th><th>Collected By</th><th class="num">Amount</th><th></th></tr></thead><tbody>
+    ${[...DB.payments].reverse().map(p=>`<tr><td class="mono"><b>${p.id}</b></td><td>${p.date}</td>
+      <td><span class="badge ${p.payerType==='Farmer'?'b-farmer':'b-group'}">${p.payerType==='Farmer'?farmerName(p.payerId):groupName(p.payerId)}</span></td>
+      <td>${p.method}</td><td>${p.collector==='Group'?'<span class="badge b-open">Group → Union</span>':'<span class="badge b-paid">Union direct</span>'}</td>
+      <td class="num mono"><b>${fmt(p.amount)}</b></td><td><button class="btn ghost sm" onclick="showReceipt('${p.id}')">🧾 View receipt</button></td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+/* ===================== STATEMENTS & REPORTS ===================== */
+function buildTransactions(scope,id){
+  const rows=[];let assessMatch,payMatch;
+  if(scope==='Union'){
+    assessMatch=a=>a.beneficiary==='Union';
+    payMatch=p=>DB.assessments.find(a=>a.id===p.allocations[0].assessId)?.beneficiary==='Union';
+  }else if(scope==='FarmerGroup'){
+    assessMatch=a=>(a.payerType==='FarmerGroup'&&a.payerId===id)||(a.beneficiary==='FarmerGroup'&&farmerGroupOf(a)===id);
+    payMatch=p=>{const a=DB.assessments.find(x=>x.id===p.allocations[0].assessId);
+      return (p.payerType==='FarmerGroup'&&p.payerId===id)||(a&&a.beneficiary==='FarmerGroup'&&farmerGroupOf(a)===id);};
+  }else{
+    assessMatch=a=>a.payerType==='Farmer'&&a.payerId===id;
+    payMatch=p=>p.payerType==='Farmer'&&p.payerId===id;
+  }
+  DB.assessments.filter(assessMatch).forEach(a=>rows.push({date:a.date,ref:a.id,
+    desc:a.desc+' · '+dtName(a.duesType),beneficiary:a.beneficiary,type:'charge',charge:a.amount,payment:0,
+    who:a.payerType==='Farmer'?farmerName(a.payerId):groupName(a.payerId)}));
+  DB.payments.filter(payMatch).forEach(p=>{const a=DB.assessments.find(x=>x.id===p.allocations[0].assessId);
+    rows.push({date:p.date,ref:p.id,desc:'Payment ('+p.method+(p.collector==='Group'?', via group':'')+')'+(a?' — '+a.desc:''),
+      type:'pay',charge:0,payment:p.amount,who:p.payerType==='Farmer'?farmerName(p.payerId):groupName(p.payerId)});});
+  rows.sort((x,y)=>x.date<y.date?-1:x.date>y.date?1:(x.type==='charge'?-1:1));
+  let bal=0;rows.forEach(r=>{bal+=r.charge-r.payment;r.balance=+bal.toFixed(2);});
+  return rows;
+}
+function farmerGroupOf(a){const f=DB.farmers.find(x=>x.id===a.payerId);return f?f.group:null;}
+let stmtScope='Farmer', stmtId=null, stmtRows=[];
+function renderStatements(){
+  const groupOpts=DB.groups.map(g=>`<option value="${g.id}">${g.name} (${g.id})</option>`).join('');
+  const farmerOpts=DB.farmers.map(f=>`<option value="${f.id}">${f.name} (${f.id})</option>`).join('');
+  if(stmtScope==='Farmer'&&!stmtId) stmtId=DB.farmers[0].id;
+  if(stmtScope==='FarmerGroup'&&!stmtId) stmtId=DB.groups[0].id;
+  const selHtml = stmtScope==='Union' ? '<div class="mini" style="padding-top:26px">Consolidated view of every union-bound transaction.</div>'
+    : `<div style="min-width:260px"><label>${stmtScope==='FarmerGroup'?'Select farmer group':'Select farmer / member'}</label>
+       <select id="stmtPick" onchange="stmtId=this.value;go('statements')">${stmtScope==='FarmerGroup'?groupOpts:farmerOpts}</select></div>`;
+  return `<div class="pill-tabs">
+    <button class="${stmtScope==='Farmer'?'on':''}" onclick="setScope('Farmer')">👤 Member statement</button>
+    <button class="${stmtScope==='FarmerGroup'?'on':''}" onclick="setScope('FarmerGroup')">🏘️ Group statement</button>
+    <button class="${stmtScope==='Union'?'on':''}" onclick="setScope('Union')">🌾 Union-wide register</button>
+  </div>
+  <div class="card panel">
+    <div class="toolbar">
+      ${selHtml}<div class="spacer"></div>
+      <button class="btn blue" onclick="openStatement(stmtScope, stmtScope==='Union'?'':stmtId)">📄 Open printable statement</button>
+      <button class="btn" onclick="exportInlineCSV()">⬇ Export CSV</button>
+    </div>
+    ${statementTableHTML(stmtScope, stmtScope==='Union'?null:stmtId)}
+  </div>
+  ${stmtScope==='Farmer'?arrearsFarmerReport():stmtScope==='FarmerGroup'?arrearsGroupReport():unionSummaryReport()}`;
+}
+function setScope(s){stmtScope=s;stmtId=null;go('statements');}
+function statementTableHTML(scope,id){
+  const rows=buildTransactions(scope,id);
+  const charges=rows.reduce((s,r)=>s+r.charge,0),pays=rows.reduce((s,r)=>s+r.payment,0);const closing=charges-pays;
+  const title = scope==='Union'?'Union — all dues-related transactions'
+    : scope==='FarmerGroup'?groupName(id)+' — statement of account':farmerName(id)+' — statement of account';
+  if(!rows.length) return `<div class="empty">No transactions recorded.</div>`;
+  return `<h3 style="margin-bottom:2px">${title}</h3>
+    <div class="stmt-sum">
+      <div class="box"><div class="l">Total charged</div><div class="v mono">${fmt(charges)}</div></div>
+      <div class="box"><div class="l">Total paid</div><div class="v mono" style="color:var(--green)">${fmt(pays)}</div></div>
+      <div class="box"><div class="l">Closing balance</div><div class="v mono" style="color:${closing>0?'var(--red)':'var(--green)'}">${fmt(closing)}</div></div>
+      <div class="box"><div class="l">Transactions</div><div class="v mono">${rows.length}</div></div>
+    </div>
+    <table><thead><tr><th>Date</th><th>Ref</th><th>Description</th>${scope==='Union'?'<th>Party</th>':''}<th class="num">Charge</th><th class="num">Payment</th><th class="num">Balance</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr class="${r.type}"><td class="mono">${r.date}</td><td class="mono">${r.ref}</td><td>${r.desc}</td>
+      ${scope==='Union'?`<td><span class="badge ${DB.farmers.find(f=>f.name===r.who)?'b-farmer':'b-group'}">${r.who}</span></td>`:''}
+      <td class="num mono">${r.charge?fmt(r.charge):''}</td><td class="num mono cr">${r.payment?fmt(r.payment):''}</td>
+      <td class="num mono"><b>${fmt(r.balance)}</b></td></tr>`).join('')}
+    <tr style="background:#f0f4f8"><td colspan="${scope==='Union'?4:3}"><b>Totals / Closing balance</b></td>
+      <td class="num mono"><b>${fmt(charges)}</b></td><td class="num mono"><b>${fmt(pays)}</b></td><td class="num mono"><b>${fmt(closing)}</b></td></tr>
+    </tbody></table>`;
+}
+function arrearsFarmerReport(){
+  const rows=DB.farmers.map(f=>{const l=DB.assessments.filter(a=>a.payerType==='Farmer'&&a.payerId===f.id);
+    return{f,bal:l.reduce((s,a)=>s+balance(a),0)}}).filter(r=>r.bal>0).sort((a,b)=>b.bal-a.bal);
+  return reportCard('Members in arrears','Farmers with an outstanding balance',['Member','Group','Balance'],
+    rows.map(r=>`<tr style="cursor:pointer" onclick="openStatement('Farmer','${r.f.id}')"><td><b>${r.f.name}</b> <span class="mini">${r.f.id}</span></td><td>${groupName(r.f.group)}</td><td class="num mono"><b>${fmt(r.bal)}</b></td></tr>`).join('')||`<tr><td colspan="3" class="empty">Everyone is fully paid 🎉</td></tr>`);
+}
+function arrearsGroupReport(){
+  const rows=DB.groups.map(g=>{const l=DB.assessments.filter(a=>a.payerType==='FarmerGroup'&&a.payerId===g.id);
+    return{g,bal:l.reduce((s,a)=>s+balance(a),0)}}).sort((a,b)=>b.bal-a.bal);
+  return reportCard('Group arrears report','Outstanding dues owed by each group to the union',['Group','Location','Balance'],
+    rows.map(r=>`<tr style="cursor:pointer" onclick="openStatement('FarmerGroup','${r.g.id}')"><td><b>${r.g.name}</b> <span class="mini">${r.g.id}</span></td><td>${r.g.location}</td><td class="num mono"><b style="color:${r.bal>0?'var(--red)':'var(--green)'}">${fmt(r.bal)}</b></td></tr>`).join(''));
+}
+function unionSummaryReport(){
+  const byType={};DB.assessments.forEach(a=>{const k=dtName(a.duesType);byType[k]=byType[k]||{amt:0,paid:0};byType[k].amt+=a.amount;byType[k].paid+=a.paid;});
+  return reportCard('Income summary by dues type','How much has been assessed vs collected per dues category',['Dues type','Assessed','Collected','Outstanding'],
+    Object.entries(byType).map(([k,v])=>`<tr><td><b>${k}</b></td><td class="num mono">${fmt(v.amt)}</td><td class="num mono cr">${fmt(v.paid)}</td><td class="num mono"><b>${fmt(v.amt-v.paid)}</b></td></tr>`).join(''));
+}
+function reportCard(title,desc,heads,body){
+  return `<div class="card panel" style="margin-top:16px"><h3>${title}</h3><div class="desc">${desc}</div>
+    <table><thead><tr>${heads.map((h,i)=>`<th class="${i>0&&i>=heads.length-3?'num':''}">${h}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+function exportInlineCSV(){exportRowsCSV(buildTransactions(stmtScope,stmtScope==='Union'?null:stmtId),stmtScope,stmtScope==='Union'?'Union':stmtId);}
+function exportStmtCSV(){exportRowsCSV(stmtRows,stmtScope,stmtId||'Union');}
+function exportRowsCSV(rows,scope,id){
+  let csv='Date,Reference,Description,Charge,Payment,Balance\n';
+  rows.forEach(r=>{csv+=[r.date,r.ref,'"'+r.desc.replace(/"/g,'""')+'"',r.charge||'',r.payment||'',r.balance].join(',')+'\n';});
+  const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='statement_'+(id||'union')+'.csv';a.click();toast('CSV exported ⬇');
+}
+function openStatement(scope,id){
+  stmtScope=scope;stmtId=(id==='')?null:id;
+  const rows=buildTransactions(scope,stmtId);stmtRows=rows;
+  const charges=rows.reduce((s,r)=>s+r.charge,0),pays=rows.reduce((s,r)=>s+r.payment,0),closing=charges-pays;
+  let name,sub;
+  if(scope==='Union'){name=DB.union.name;sub='Consolidated dues register';}
+  else if(scope==='FarmerGroup'){const g=DB.groups.find(x=>x.id===id);name=g.name;sub=g.id+' · '+g.location+' · '+g.members+' members';}
+  else{const f=DB.farmers.find(x=>x.id===id);name=f.name;sub=f.id+' · Group: '+groupName(f.group);}
+  document.getElementById('stmtBody').innerHTML=`
+    <div class="stmt-head"><div><div class="u">🌾 ${DB.union.name}</div><div class="mini">Statement of Account</div></div>
+      <div class="stmt-meta">Date: ${today}<br>Currency: EUR (€)<br>Ref: STMT-${(id||'UNION')}</div></div>
+    <div class="stmt-party"><div><b>Account</b>${name}</div><div><b>Details</b>${sub}</div><div><b>Period</b>FY 2026 (to ${today})</div></div>
+    <div class="stmt-sum">
+      <div class="box"><div class="l">Total charged</div><div class="v mono">${fmt(charges)}</div></div>
+      <div class="box"><div class="l">Total paid</div><div class="v mono" style="color:var(--green)">${fmt(pays)}</div></div>
+      <div class="box"><div class="l">Balance due</div><div class="v mono" style="color:${closing>0?'var(--red)':'var(--green)'}">${fmt(closing)}</div></div></div>
+    <table><thead><tr><th>Date</th><th>Ref</th><th>Description</th>${scope==='Union'?'<th>Party</th>':''}<th class="num">Charge</th><th class="num">Payment</th><th class="num">Balance</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr class="${r.type}"><td class="mono">${r.date}</td><td class="mono">${r.ref}</td><td>${r.desc}</td>
+      ${scope==='Union'?`<td>${r.who}</td>`:''}
+      <td class="num mono">${r.charge?fmt(r.charge):''}</td><td class="num mono cr">${r.payment?fmt(r.payment):''}</td>
+      <td class="num mono"><b>${fmt(r.balance)}</b></td></tr>`).join('')}
+    <tr style="background:#f0f4f8"><td colspan="${scope==='Union'?4:3}"><b>Closing balance</b></td>
+      <td class="num mono"><b>${fmt(charges)}</b></td><td class="num mono"><b>${fmt(pays)}</b></td><td class="num mono"><b>${fmt(closing)}</b></td></tr>
+    </tbody></table>
+    <p class="mini" style="margin-top:14px">${closing>0?'Amount of <b>'+fmt(closing)+'</b> remains outstanding.':'Account fully settled. Thank you.'} · Computer-generated statement, valid without signature.</p>`;
+  show('stmtOverlay');
+}
+
+/* ===================== LEDGER ===================== */
+function renderLedger(){
+  let dr=0,cr=0;DB.journal.forEach(j=>j.lines.forEach(l=>{dr+=l.dr;cr+=l.cr;}));
+  const accts={};DB.journal.forEach(j=>j.lines.forEach(l=>{accts[l.acct]=(accts[l.acct]||0)+l.dr-l.cr;}));
+  const je=[...DB.journal].reverse().map(j=>{const jd=j.lines.reduce((s,l)=>s+l.dr,0),jc=j.lines.reduce((s,l)=>s+l.cr,0);
+    return `<div class="je"><div class="je-h"><span><b>${j.id}</b> · ${j.date} · <span class="mini">${j.desc}</span></span><span class="mini">Source: ${j.src}</span></div>
+      <table><thead><tr><th>Account</th><th class="num">Debit</th><th class="num">Credit</th></tr></thead><tbody>
+      ${j.lines.map(l=>`<tr><td>${l.dr>0?'':'&nbsp;&nbsp;&nbsp;&nbsp;'}${l.acct}</td><td class="num mono dr">${l.dr>0?fmt(l.dr):''}</td><td class="num mono cr">${l.cr>0?fmt(l.cr):''}</td></tr>`).join('')}
+      <tr style="background:#fafbfc"><td class="mini">Balanced ✔</td><td class="num mono"><b>${fmt(jd)}</b></td><td class="num mono"><b>${fmt(jc)}</b></td></tr></tbody></table></div>`;}).join('');
+  return `<div class="grid row2" style="margin-bottom:16px">
+    <div class="card panel"><h3>Trial balance</h3><div class="ledger-eq">Assets & clearing are debit balances; income accounts are credit balances.</div>
+      <table><thead><tr><th>Account</th><th class="num">Balance</th></tr></thead><tbody>
+      ${Object.entries(accts).map(([a,b])=>`<tr><td>${a}</td><td class="num mono ${b>=0?'dr':'cr'}">${fmt(Math.abs(b))} ${b>=0?'Dr':'Cr'}</td></tr>`).join('')}
+      <tr style="background:#fafbfc"><td><b>Totals</b></td><td class="num mono"><b>${fmt(dr)} Dr = ${fmt(cr)} Cr</b></td></tr></tbody></table></div>
+    <div class="card kpi g" style="align-self:start"><div class="lbl">📒 Ledger integrity</div>
+      <div class="val" style="color:${dr===cr?'var(--green)':'var(--red)'}">${dr===cr?'In balance ✔':'Out of balance ✖'}</div>
+      <div class="foot">Total debits ${fmt(dr)} · Total credits ${fmt(cr)}<br>${DB.journal.length} journal entries posted</div></div>
+  </div><div class="sec-title">Journal entries</div>${je}`;
+}
+
+/* ===================== ASSESSMENT MODAL ===================== */
+function fillSelect(el,items,val,txt){el.innerHTML=items.map(i=>`<option value="${i[val]}">${i[txt]}</option>`).join('');}
+function openAssessModal(payerType,payerId){
+  document.getElementById('a_payerType').value=payerType||'FarmerGroup';
+  document.getElementById('a_due').value=today;document.getElementById('a_amount').value='';document.getElementById('a_desc').value='';
+  fillSelect(document.getElementById('a_group'),DB.groups,'id','name');
+  fillSelect(document.getElementById('a_farmer'),DB.farmers.map(f=>({id:f.id,name:f.name+' ('+f.id+')'})),'id','name');
+  onPayerTypeChange();
+  if(payerId){if(payerType==='FarmerGroup')document.getElementById('a_group').value=payerId;else document.getElementById('a_farmer').value=payerId;}
+  show('assessOverlay');
+}
+function onPayerTypeChange(){const pt=document.getElementById('a_payerType').value;
+  document.getElementById('a_groupWrap').style.display=pt==='FarmerGroup'?'block':'none';
+  document.getElementById('a_farmerWrap').style.display=pt==='Farmer'?'block':'none';
+  fillSelect(document.getElementById('a_duesType'),DB.duesTypes.filter(d=>d.payer===pt),'id','name');onDuesTypeChange();}
+function onDuesTypeChange(){const d=DB.duesTypes.find(x=>x.id===document.getElementById('a_duesType').value);
+  document.getElementById('a_beneficiaryHint').textContent=d?`Beneficiary: ${d.beneficiary} · Frequency: ${d.freq}`:'';}
+function saveAssessment(){
+  const pt=document.getElementById('a_payerType').value;const amount=parseFloat(document.getElementById('a_amount').value);
+  const desc=document.getElementById('a_desc').value.trim();const dt=DB.duesTypes.find(x=>x.id===document.getElementById('a_duesType').value);
+  if(!amount||amount<=0)return toast('Enter a valid amount ⚠️');
+  const payerId=pt==='FarmerGroup'?document.getElementById('a_group').value:document.getElementById('a_farmer').value;
+  const id=pt==='FarmerGroup'?'ASS-'+(DB.seq.ass++):'ASS-'+(DB.seq.farmAss++);
+  DB.assessments.push({id,date:today,payerType:pt,payerId,duesType:dt.id,beneficiary:dt.beneficiary,desc:desc||dt.name,amount,paid:0,due:document.getElementById('a_due').value});
+  closeModal('assessOverlay');go(current);
+  toast(`Assessment ${id} created — ${fmt(amount)} owed by ${pt==='FarmerGroup'?groupName(payerId):farmerName(payerId)} ✅`);
+}
+
+/* ===================== PAYMENT MODAL ===================== */
+function openPayModal(payerType,payerId){
+  const payers=[...DB.groups.map(g=>({v:'FarmerGroup|'+g.id,t:'🏘️ '+g.name+' ('+g.id+')'})),
+    ...DB.farmers.map(f=>({v:'Farmer|'+f.id,t:'👤 '+f.name+' ('+f.id+')'}))];
+  document.getElementById('p_payer').innerHTML=payers.map(p=>`<option value="${p.v}">${p.t}</option>`).join('');
+  document.getElementById('p_date').value=today;
+  if(payerType&&payerId)document.getElementById('p_payer').value=payerType+'|'+payerId;
+  loadPayableAssessments();show('payOverlay');
+}
+function loadPayableAssessments(){
+  const [pt,pid]=document.getElementById('p_payer').value.split('|');
+  const list=DB.assessments.filter(a=>a.payerType===pt&&a.payerId===pid&&balance(a)>0);
+  const box=document.getElementById('p_assessList');
+  if(!list.length){box.innerHTML='<div class="empty" style="padding:18px">No outstanding dues for this payer 🎉</div>';updatePayTotal();return;}
+  box.innerHTML=`<label>Outstanding dues — tick what is being paid</label>`+list.map(a=>`
+    <label style="display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;cursor:pointer;font-weight:400">
+      <input type="checkbox" style="width:auto" class="p_ass" data-id="${a.id}" data-bal="${balance(a)}" checked onchange="updatePayTotal()">
+      <span style="flex:1"><b>${a.desc}</b><div class="mini">${a.id} · ${dtName(a.duesType)} · to ${a.beneficiary}</div></span>
+      <span class="mono">${fmt(balance(a))}</span></label>`).join('');
+  updatePayTotal();
+}
+function updatePayTotal(){let t=0;document.querySelectorAll('.p_ass:checked').forEach(c=>t+=parseFloat(c.dataset.bal));document.getElementById('p_total').textContent=fmt(t);}
+function savePayment(){
+  const [pt,pid]=document.getElementById('p_payer').value.split('|');
+  const checked=[...document.querySelectorAll('.p_ass:checked')];
+  if(!checked.length)return toast('Select at least one due to pay ⚠️');
+  const allocations=[];let total=0;
+  checked.forEach(c=>{const amt=parseFloat(c.dataset.bal);allocations.push({assessId:c.dataset.id,amt});total+=amt;
+    const a=DB.assessments.find(x=>x.id===c.dataset.id);a.paid=+(a.paid+amt).toFixed(2);});
+  const rcpId='RCP-'+(DB.seq.rcp++);const collector=document.getElementById('p_collector').value;
+  const method=document.getElementById('p_method').value;const date=document.getElementById('p_date').value;
+  DB.payments.push({id:rcpId,date,payerType:pt,payerId:pid,method,collector,amount:+total.toFixed(2),allocations});
+  postJournal(rcpId,date,pt,pid,collector,method,allocations,total);
+  closeModal('payOverlay');go(current);showReceipt(rcpId);
+  toast(`Payment recorded · Receipt ${rcpId} · ${fmt(total)} ✅`);
+}
+function postJournal(rcpId,date,pt,pid,collector,method,allocations,total){
+  const first=DB.assessments.find(a=>a.id===allocations[0].assessId);const beneficiary=first.beneficiary;
+  const debitAcct=collector==='Group'?'1200 Group Clearing (held for union)':(method==='Cash'?'1010 Union Cash':'1000 Union Bank');
+  const incomeAcct=beneficiary==='Union'?((first.duesType==='DT-GA'||first.duesType==='DT-GL')?'4000 Affiliation Dues Income':'4100 Membership Dues Income'):'4200 Group Dues Income';
+  const payer=pt==='Farmer'?farmerName(pid):groupName(pid);
+  DB.journal.push({id:'JE-'+(DB.seq.je++),date,src:rcpId,desc:`Dues received — ${payer}`,
+    lines:[{acct:debitAcct,dr:+total.toFixed(2),cr:0},{acct:incomeAcct,dr:0,cr:+total.toFixed(2)}]});
+}
+
+/* ===================== RECEIPT ===================== */
+function showReceipt(id){
+  const p=DB.payments.find(x=>x.id===id);const payer=p.payerType==='Farmer'?farmerName(p.payerId):groupName(p.payerId);
+  const lines=p.allocations.map(al=>{const a=DB.assessments.find(x=>x.id===al.assessId);
+    return `<div class="rc-line"><span>${a?a.desc:al.assessId}<br><span class="mini">${al.assessId}</span></span><span class="mono">${fmt(al.amt)}</span></div>`;}).join('');
+  document.getElementById('receiptBody').innerHTML=`
+    <div class="rc-top"><div class="u">🌾 ${DB.union.name}</div><div class="mini">Official Dues Receipt</div></div>
+    <div class="rc-line"><span>Receipt No.</span><b class="mono">${p.id}</b></div>
+    <div class="rc-line"><span>Date</span><span>${p.date}</span></div>
+    <div class="rc-line"><span>Received from</span><span>${payer}<br><span class="mini">${p.payerId} · ${p.payerType}</span></span></div>
+    <div class="rc-line"><span>Method</span><span>${p.method}</span></div>
+    <div class="rc-line"><span>Collected by</span><span>${p.collector==='Group'?'Farmer Group (for Union)':'Union (direct)'}</span></div>
+    <div style="border-top:1px dashed var(--line);margin:12px 0"></div>${lines}
+    <div class="rc-line rc-total"><span>TOTAL PAID</span><span class="mono">${fmt(p.amount)}</span></div>
+    <div class="rc-stamp">PAID</div>
+    <p class="mini" style="text-align:center;margin-top:16px">Thank you. Computer-generated receipt, valid without signature.</p>`;
+  show('receiptOverlay');
+}
+
+/* ===================== UTILS ===================== */
+function show(id){document.getElementById(id).classList.add('show');}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+let flashTimer;
+function toast(msg){const f=document.getElementById('flash');f.textContent=msg;f.classList.add('show');clearTimeout(flashTimer);flashTimer=setTimeout(()=>f.classList.remove('show'),3200);}
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show');}));
+go('dashboard');
+</script>
+</body>
+</html>
