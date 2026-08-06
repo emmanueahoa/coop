@@ -1,13 +1,29 @@
 # 🌾 Green Valley Farmer Union — Dues, Ledger, Statements & ID Cards
 
-A **single-file, self-contained web app** for managing a farmer union's membership dues, payments, financial ledger, account statements, and member ID cards. No installation, no server, no internet connection required — everything (HTML, CSS, JavaScript, and demo data) lives in one `.html` file.
+A single-file, self-contained web app for managing a farmer union's membership dues, payments, financial ledger, account statements, and member ID cards. No installation, no server, no internet connection required — just download and open the HTML file in a modern browser.
+
+---
+
+## Table of contents
+
+- Quick start
+- What the app does
+- Modules (sidebar)
+- Key features
+- Printing tips
+- Sample data included
+- Technical notes
+- Common customizations
+- Roadmap ideas
+- Contributing & license
+- Disclaimer
 
 ---
 
 ## 🚀 Quick start
 
-1. Download **`dues-management-app.html`**.
-2. **Double-click** it to open in any modern browser (Chrome, Edge, Firefox, Safari).
+1. Download `dues-management-app.html`.
+2. Double-click it to open in any modern browser (Chrome, Edge, Firefox, Safari).
 3. That's it — the app runs entirely in your browser.
 
 > ⚠️ **Demo data resets on refresh.** All data is held in memory. Reloading the page restores the original sample data (this is intentional, so you can demo repeatedly with clean numbers).
@@ -47,9 +63,9 @@ It tracks **who owes what**, **who paid**, **who collected the money**, and keep
 ## ⭐ Key features
 
 ### Dues management
-- **Set amount owed** for a farmer group or an individual farmer.
+- Set amount owed for a farmer group or an individual farmer.
 - A farmer can owe **union dues and group dues at the same time** — each is a separate assessment with its own beneficiary.
-- **Record payments**, tick which dues to settle, choose method, and mark whether the **union collected directly** or a **group collected on behalf of the union**.
+- Record payments, tick which dues to settle, choose method, and mark whether the **union collected directly** or a **group collected on behalf of the union**.
 - **Official receipts** auto-generated with a printable layout.
 
 ### Financial ledger
@@ -133,9 +149,17 @@ You can add new assessments and payments live; they flow through to the dashboar
 
 ---
 
+## 🤝 Contributing & license
+
+This repository contains a demo prototype. If you'd like to contribute improvements, please open an issue or pull request. Add tests or examples where appropriate and keep changes compatible with the single-file demo approach.
+
+(If you want a license in the repo, tell me which license you prefer — I can add an SPDX header or a LICENSE file.)
+
+---
+
 ## ⚖️ Disclaimer
 
-This is a **demonstration prototype** with mock data. Before using it for real financial or membership records, have the accounting treatment and data-protection approach reviewed by a qualified accountant and, where relevant, a cooperative-law adviser for your jurisdiction.
+This is a **demonstration prototype** with mock data. Before using it for real financial or membership records, have the accounting treatment and data-protection approach reviewed by a qualified accountant and a data-protection/legal advisor.
 
 ---
 
